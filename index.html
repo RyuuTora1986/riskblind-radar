@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RiskBlind Radar — 风险盲区雷达</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #faf8f4;
+      --surface: #ffffff;
+      --primary: #c47d2a;
+      --primary-dark: #9a6019;
+      --accent: #e05c3a;
+      --text: #2c2c2c;
+      --text-muted: #6b6b6b;
+      --border: #e8e0d4;
+      --radar-green: #3db88b;
+      --shadow: 0 4px 24px rgba(0,0,0,0.08);
+      --shadow-hover: 0 8px 36px rgba(0,0,0,0.14);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans SC', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 48px;
+      position: sticky;
+      top: 0;
+      background: rgba(250,248,244,0.92);
+      backdrop-filter: blur(12px);
+      z-index: 100;
+      border-bottom: 1px solid var(--border);
+    }
+    .logo {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--primary-dark);
+      letter-spacing: 1px;
+    }
+    .nav-links a {
+      margin-left: 28px;
+      text-decoration: none;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--primary); }
+    .btn-nav {
+      background: var(--primary);
+      color: #fff !important;
+      padding: 8px 20px;
+      border-radius: 24px;
+      font-weight: 500;
+    }
+    .btn-nav:hover { background: var(--primary-dark); }
+    .hero {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 96px 24px 72px;
+      text-align: center;
+    }
+    .hero-badge {
+      display: inline-block;
+      background: #fff3e0;
+      color: var(--primary);
+      border: 1px solid #f5d08a;
+      padding: 5px 16px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      margin-bottom: 24px;
+    }
+    .hero h1 {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 3.2rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.25;
+      margin-bottom: 20px;
+    }
+    .hero h1 span { color: var(--primary); }
+    .hero-sub {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      max-width: 580px;
+      margin: 0 auto 36px;
+      font-weight: 300;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      padding: 13px 30px;
+      border-radius: 28px;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.95rem;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 16px rgba(196,125,42,0.3);
+    }
+    .btn-primary:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(196,125,42,0.4);
+    }
+    .btn-secondary {
+      background: #fff;
+      color: var(--text);
+      padding: 13px 30px;
+      border-radius: 28px;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.95rem;
+      border: 1.5px solid var(--border);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
+    .radar-wrap {
+      margin: 52px auto 0;
+      width: 200px;
+      height: 200px;
+      position: relative;
+    }
+    .radar-ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1.5px solid rgba(196,125,42,0.18);
+    }
+    .radar-ring:nth-child(1) { width: 200px; height: 200px; top: 0; left: 0; }
+    .radar-ring:nth-child(2) { width: 140px; height: 140px; top: 30px; left: 30px; }
+    .radar-ring:nth-child(3) { width: 80px; height: 80px; top: 60px; left: 60px; }
+    .radar-dot {
+      position: absolute;
+      width: 10px; height: 10px;
+      background: var(--accent);
+      border-radius: 50%;
+      top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      box-shadow: 0 0 12px rgba(224,92,58,0.6);
+    }
+    .radar-sweep {
+      position: absolute;
+      width: 100px; height: 3px;
+      background: linear-gradient(90deg, var(--primary), transparent);
+      top: 50%; left: 50%;
+      transform-origin: 0 50%;
+      border-radius: 2px;
+      animation: sweep 3s linear infinite;
+      opacity: 0.7;
+    }
+    @keyframes sweep {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .radar-label {
+      text-align: center;
+      margin-top: 14px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+    .section-divider { max-width: 640px; margin: 0 auto; padding: 0 24px; }
+    .section-divider hr { border: none; border-top: 1px solid var(--border); }
+    .section { max-width: 960px; margin: 0 auto; padding: 80px 24px; }
+    .section-label {
+      text-align: center;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--primary);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .section-title {
+      text-align: center;
+      font-family: 'Noto Serif SC', serif;
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 14px;
+    }
+    .section-sub {
+      text-align: center;
+      color: var(--text-muted);
+      max-width: 520px;
+      margin: 0 auto 56px;
+      font-size: 0.95rem;
+    }
+    .scenes { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+    .scene-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      transition: all 0.2s;
+    }
+    .scene-card:hover {
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-2px);
+      border-color: transparent;
+    }
+    .scene-card .emoji { font-size: 1.6rem; margin-bottom: 12px; display: block; }
+    .scene-card h3 { font-size: 0.92rem; font-weight: 700; margin-bottom: 6px; }
+    .scene-card p { font-size: 0.85rem; color: var(--text-muted); line-height: 1.6; }
+    .scene-card .with-radar { font-size: 0.82rem; color: var(--radar-green); font-weight: 500; margin-top: 8px; }
+    .scene-card .with-radar::before { content: '→ '; }
+    .templates-section {
+      background: linear-gradient(180deg, #fdf9f2 0%, var(--bg) 100%);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .templates-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
+    .template-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      transition: all 0.25s;
+    }
+    .template-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+    .template-card .t-num {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #fff;
+      background: var(--primary);
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+    .template-card h3 { font-size: 0.88rem; font-weight: 700; margin-bottom: 6px; }
+    .template-card .trigger {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      background: var(--bg);
+      padding: 2px 10px;
+      border-radius: 10px;
+      display: inline-block;
+      margin-bottom: 10px;
+    }
+    .template-card .question { font-size: 0.85rem; color: var(--text); line-height: 1.6; }
+    .template-card.featured { background: linear-gradient(135deg, #fff8ee, #fff); border-color: #f5d08a; }
+    .template-card.featured .t-num { background: var(--accent); }
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+    .step { text-align: center; }
+    .step-num {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 2.8rem;
+      font-weight: 700;
+      color: var(--border);
+      line-height: 1;
+      margin-bottom: 12px;
+    }
+    .step h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+    .step p { font-size: 0.88rem; color: var(--text-muted); }
+    .persona-section { background: var(--surface); border-top: 1px solid var(--border); }
+    .persona {
+      max-width: 700px;
+      margin: 0 auto;
+      background: #fefcf8;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 40px 48px;
+      position: relative;
+    }
+    .persona-icon {
+      font-size: 2.4rem;
+      position: absolute;
+      top: -20px;
+      left: 40px;
+      background: var(--bg);
+      padding: 4px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+    .persona h2 {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+    .persona-chat { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .persona-chat li { padding: 10px 16px; border-radius: 10px; font-size: 0.92rem; }
+    .persona-chat li.user { background: #f0ebe2; align-self: flex-end; max-width: 85%; }
+    .persona-chat li.ai {
+      background: #fff3e0;
+      color: var(--primary-dark);
+      border: 1px solid #f5d08a;
+      align-self: flex-start;
+      max-width: 85%;
+    }
+    .cta-section {
+      background: linear-gradient(135deg, #2c2c2c 0%, #3a2a12 100%);
+      text-align: center;
+      padding: 88px 24px;
+    }
+    .cta-section h2 { font-family: 'Noto Serif SC', serif; font-size: 2.2rem; color: #fff; margin-bottom: 14px; }
+    .cta-section p { color: rgba(255,255,255,0.6); margin-bottom: 36px; font-size: 1rem; }
+    .cta-section .btn-primary { background: var(--primary); font-size: 1rem; padding: 15px 36px; }
+    footer {
+      text-align: center;
+      padding: 32px 24px;
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      border-top: 1px solid var(--border);
+    }
+    footer a { color: var(--text-muted); text-decoration: underline; }
+    @media (max-width: 640px) {
+      nav { padding: 16px 20px; }
+      .hero h1 { font-size: 2.2rem; }
+      .section { padding: 56px 20px; }
+      .steps { grid-template-columns: 1fr; gap: 24px; }
+      .persona { padding: 28px 20px; }
+      .cta-section h2 { font-size: 1.7rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">◉ RiskBlind Radar</div>
+  <div class="nav-links">
+    <a href="#what">是什么</a>
+    <a href="#templates">十大追问</a>
+    <a href="#how">原理</a>
+    <a href="#start" class="btn-nav">立即使用</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-badge">🛡 给 AI 助手装上风险雷达</div>
+  <h1>你的 AI 助手，<br>现在开始会<span>追问你</span></h1>
+  <p class="hero-sub">
+    RiskBlind Radar 是一个 AI 助手增强 skill。它不帮你执行——它在你即将犯错之前，轻声问一句：「这事您想清楚了吗？」
+  </p>
+  <div class="hero-actions">
+    <a href="https://github.com/RyuuTora1986/riskblind-radar" class="btn-primary" target="_blank">在 GitHub 查看</a>
+    <a href="#what" class="btn-secondary">了解原理</a>
+  </div>
+  <div class="radar-wrap">
+    <div class="radar-ring"></div>
+    <div class="radar-ring"></div>
+    <div class="radar-ring"></div>
+    <div class="radar-dot"></div>
+    <div class="radar-sweep"></div>
+  </div>
+  <p class="radar-label">风险雷达持续扫描中...</p>
+</section>
+
+<section class="section" id="what">
+  <div class="section-label">它能做什么</div>
+  <h2 class="section-title">独立创始人最需要的那种"提醒"</h2>
+  <p class="section-sub">不是批评，不是反对，只是在你做决定之前，帮你多想一步。</p>
+  <div class="scenes">
+    <div class="scene-card">
+      <span class="emoji">💸</span>
+      <h3>"先投 5 万试试"</h3>
+      <p>你说服自己这是最小验证。但获客成本、LTV、回收周期，你没有算清楚。</p>
+      <p class="with-radar">追问：「你的 ROI 公式是什么？LTV 是多少？」</p>
+    </div>
+    <div class="scene-card">
+      <span class="emoji">🤷</span>
+      <h3>"用户肯定会喜欢的"</h3>
+      <p>这个判断来自直觉，来自朋友圈反馈，没有验证计划。</p>
+      <p class="with-radar">追问：「这个假设验证过吗？谁来验证？」</p>
+    </div>
+    <div class="scene-card">
+      <span class="emoji">⏳</span>
+      <h3>"先等等再说"</h3>
+      <p>等一个完美时机。但后置条件是什么？如果一直不做，最坏的结果呢？</p>
+      <p class="with-radar">追问：「后置条件是什么？最坏结果是什么？」</p>
+    </div>
+    <div class="scene-card">
+      <span class="emoji">💰</span>
+      <h3>"已经投了这么多了"</h3>
+      <p>沉没成本在绑架你。退出条件是什么？什么时候该认输？</p>
+      <p class="with-radar">追问：「退出条件是什么？什么时候说'这方向不行'？」</p>
+    </div>
+    <div class="scene-card">
+      <span class="emoji">🎯</span>
+      <h3>"上线后就算成功"</h3>
+      <p>没有标准的"成功"是伪成功。上线后多少天内验证什么指标？</p>
+      <p class="with-radar">追问：「'成功'具体指什么？多少天内验证？」</p>
+    </div>
+    <div class="scene-card">
+      <span class="emoji">🤝</span>
+      <h3>"这周我一定完成"</h3>
+      <p>没有验收标准的承诺是空话。没做到怎么办？谁负责追？</p>
+      <p class="with-radar">追问：「验收标准是什么？没做到怎么处理？」</p>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"><hr></div>
+
+<section class="section templates-section" id="templates">
+  <div class="section-label">核心能力</div>
+  <h2 class="section-title">十大风险追问模板</h2>
+  <p class="section-sub">每一个模板对应一种常见的决策盲区。触发即追问，不打断，不啰嗦。</p>
+  <div class="templates-grid">
+    <div class="template-card featured">
+      <div class="t-num">T7</div>
+      <h3>承诺追踪</h3>
+      <span class="trigger">我会 / 这周 / 明天</span>
+      <p class="question">「验收标准是什么？没做到怎么办？」</p>
+    </div>
+    <div class="template-card featured">
+      <div class="t-num">T2</div>
+      <h3>ROI 风险</h3>
+      <span class="trigger">投钱 / 成本 / 预算</span>
+      <p class="question">「你的 ROI 公式是什么？LTV 是多少？」</p>
+    </div>
+    <div class="template-card featured">
+      <div class="t-num">T3</div>
+      <h3>成功定义</h3>
+      <span class="trigger">上线 / 发布 / 完成</span>
+      <p class="question">「'成功'具体指什么？多少天内验证？」</p>
+    </div>
+    <div class="template-card">
+      <div class="t-num">T1</div>
+      <h3>二阶思维</h3>
+      <span class="trigger">计划 / 要做 / 准备</span>
+      <p class="question">「X 之后然后呢？链条里最脆弱的环节在哪？」</p>
+    </div>
+    <div class="template-card">
+      <div class="t-num">T4</div>
+      <h3>拖延风险</h3>
+      <span class="trigger">先...再说 / 等等看</span>
+      <p class="question">「后置条件是什么？最坏结果是什么？」</p>
+    </div>
+    <div class="template-card">
+      <div class="t-num">T5</div>
+      <h3>壁垒验证</h3>
+      <span class="trigger">AI 优势 / 竞争壁垒</span>
+      <p class="question">「没有 AI 这事能成吗？壁垒能持续多久？」</p>
+    </div>
+    <div class="template-card">
+      <div class="t-num">T6</div>
+      <h3>用户假设</h3>
+      <span class="trigger">用户会 / 用户需要</span>
+      <p class="question">「这个假设验证过吗？谁来验证？」</p>
+    </div>
+    <div class="template-card">
+      <div class="t-num">T8</div>
+      <h3>机会信号</h3>
+      <span class="trigger">麻烦 / 太贵 / 要是能</span>
+      <p class="question">「这个抱怨遇到多少次了？能变现吗？」</p>
+    </div>
+    <div class="template-card">
+      <div class="t-num">T9</div>
+      <h3>退出机制</h3>
+      <span class="trigger">已经投了 / 继续 / 加码</span>
+      <p class="question">「退出条件是什么？什么时候认输？」</p>
+    </div>
+    <div class="template-card">
+      <div class="t-num">T10</div>
+      <h3>资源边界</h3>
+      <span class="trigger">同时 / 两边 / 一手...一手</span>
+      <p class="question">「哪件事是主？资源够吗？」</p>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"><hr></div>
+
+<section class="section" id="how">
+  <div class="section-label">工作原理</div>
+  <h2 class="section-title">轻量接入，不改变你的工作流</h2>
+  <p class="section-sub">作为 skill 运行在 AI 助手的上下文里，不读写你的文件，不监控你的操作。</p>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">01</div>
+      <h3>对话时被动扫描</h3>
+      <p>监听你的消息内容，扫描触发词。闲聊时不触发，不打扰你。</p>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <h3>命中模板即追问</h3>
+      <p>命中对应风险模板，在当前回复末尾主动追问。一次最多 2 个，不叠加压力。</p>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <h3>帮你想清楚再走</h3>
+      <p>不是给你答案，是逼你想清楚那个被你忽略的问题。决定还是你自己做。</p>
+    </div>
+  </div>
+</section>
+
+<section class="section persona-section">
+  <div class="section-label">对话示例</div>
+  <h2 class="section-title" style="margin-bottom:36px">装上雷达之后，对话是这样的</h2>
+  <div class="persona">
+    <div class="persona-icon">🛡️</div>
+    <h2>某独立创始人 · 与 RiskBlind Radar 的对话</h2>
+    <ul class="persona-chat">
+      <li class="user">我打算这周上线，然后再慢慢优化。</li>
+      <li class="ai">你的"成功"具体指什么？上线后多少天内要验证什么指标？</li>
+      <li class="user">嗯...我觉得用户反馈好了自然会优化。</li>
+      <li class="ai">「用户会喜欢」这个假设验证过吗？谁来验证？</li>
+      <li class="user">好吧，我先列一个验证指标清单。</li>
+      <li class="ai">好。这个清单什么时候完成？验收标准是什么？</li>
+    </ul>
+  </div>
+</section>
+
+<section class="cta-section" id="start">
+  <h2>让 AI 成为你的思维合伙人</h2>
+  <p>不是替你思考，而是在你思考之前，轻声补一句：「这事，您想清楚了吗？」</p>
+  <a href="https://github.com/RyuuTora1986/riskblind-radar" class="btn-primary" target="_blank">
+    在 GitHub 获取 RiskBlind Radar
+  </a>
+</section>
+
+<footer>
+  <p>RiskBlind Radar · MIT License · 服务中文 AI 助手用户</p>
+  <p style="margin-top:6px"><a href="https://github.com/RyuuTora1986/riskblind-radar">GitHub</a> · <a href="https://clawhub.ai">ClawHub</a></p>
+</footer>
+
+</body>
+</html>
